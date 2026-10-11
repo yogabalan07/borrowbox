@@ -1,0 +1,6 @@
+{
+  "name": "BorrowBox — Campus Student Lending & Borrowing Network",
+  "description": "A clean, friendly campus marketplace for college students to list, borrow, and rent items, textbooks, gear, and supplies with trust and ease.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
