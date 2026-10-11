@@ -19,6 +19,7 @@ import { itemsService, requestsService } from '../services/api';
 import { Item, BorrowRequest } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { ItemCard } from '../components/ItemCard';
+import { SafeImg } from '../components/SafeImg';
 
 export const ProfilePage: React.FC = () => {
   const { currentUser, updateProfile } = useAuth();
@@ -117,7 +118,7 @@ export const ProfilePage: React.FC = () => {
       <div className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-            <img
+            <SafeImg
               src={currentUser.avatarUrl}
               alt={currentUser.name}
               className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-stone-200 shrink-0 shadow-xs"
@@ -265,8 +266,8 @@ export const ProfilePage: React.FC = () => {
                 {borrowHistory.map((req) => (
                   <div key={req.id} className="p-4 sm:p-5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">
-                      <img
-                        src={req.item.images[0]}
+                      <SafeImg
+                        src={req.item.images?.[0]}
                         alt=""
                         className="w-12 h-12 rounded-xl object-cover shrink-0 border border-stone-100"
                       />

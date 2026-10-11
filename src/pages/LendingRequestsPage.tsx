@@ -17,6 +17,7 @@ import { requestsService, chatService } from '../services/api';
 import { BorrowRequest } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { EmptyState } from '../components/EmptyState';
+import { SafeImg } from '../components/SafeImg';
 
 export const LendingRequestsPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -134,8 +135,8 @@ export const LendingRequestsPage: React.FC = () => {
                 className="bg-white rounded-2xl border-2 border-amber-200/80 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6"
               >
                 <div className="flex items-start gap-4">
-                  <img
-                    src={req.item.images[0]}
+                  <SafeImg
+                    src={req.item.images?.[0]}
                     alt=""
                     className="w-16 h-16 rounded-xl object-cover shrink-0 border border-stone-100"
                   />
@@ -226,8 +227,8 @@ export const LendingRequestsPage: React.FC = () => {
                 className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6"
               >
                 <div className="flex items-start gap-4">
-                  <img
-                    src={req.item.images[0]}
+                  <SafeImg
+                    src={req.item.images?.[0]}
                     alt=""
                     className="w-16 h-16 rounded-xl object-cover shrink-0 border border-stone-100"
                   />
@@ -260,7 +261,7 @@ export const LendingRequestsPage: React.FC = () => {
                     </button>
                   )}
 
-                  {req.status === 'active' && (
+                  {(req.status === 'active' || req.status === 'overdue') && (
                     <button
                       onClick={() => handleStatusChange(req.id, 'returned')}
                       disabled={actionLoadingId === req.id}

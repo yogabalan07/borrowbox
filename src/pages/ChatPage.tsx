@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { chatService } from '../services/api';
 import { Conversation, Message } from '../types';
+import { SafeImg } from '../components/SafeImg';
 
 export const ChatPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -26,6 +27,7 @@ export const ChatPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const fetchConversations = () => {
     if (!currentUser) return;
@@ -89,6 +91,7 @@ export const ChatPage: React.FC = () => {
 
     const text = inputText.trim();
     setInputText('');
+    setSendError(null);
     setSending(true);
 
     try {
@@ -119,6 +122,9 @@ export const ChatPage: React.FC = () => {
             : c
         )
       );
+    } catch (err: any) {
+      setSendError(err?.message || 'Message could not be sent. Please try again.');
+      setInputText(text);
     } finally {
       setSending(false);
     }
@@ -162,7 +168,7 @@ export const ChatPage: React.FC = () => {
                       isSelected ? 'bg-white shadow-xs border-l-2 border-emerald-600' : 'hover:bg-stone-100/60'
                     }`}
                   >
-                    <img
+                    <SafeImg
                       src={conv.otherParticipant.avatarUrl}
                       alt=""
                       className="w-10 h-10 rounded-full object-cover shrink-0 border border-stone-200"
@@ -208,7 +214,7 @@ export const ChatPage: React.FC = () => {
               {/* Active Conversation Header */}
               <div className="p-4 border-b border-stone-200 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img
+                  <SafeImg
                     src={activeConversation.otherParticipant.avatarUrl}
                     alt=""
                     className="w-10 h-10 rounded-full object-cover border border-stone-200"
@@ -264,6 +270,11 @@ export const ChatPage: React.FC = () => {
               </div>
 
               {/* Input Bar */}
+              {sendError && (
+                <div className="mx-3 mb-1 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
+                  {sendError}
+                </div>
+              )}
               <form onSubmit={handleSendMessage} className="p-3 border-t border-stone-200 flex items-center gap-2 bg-white">
                 <input
                   type="text"

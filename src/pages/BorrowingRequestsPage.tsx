@@ -15,6 +15,7 @@ import { requestsService } from '../services/api';
 import { BorrowRequest, BorrowRequestStatus } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { EmptyState } from '../components/EmptyState';
+import { SafeImg } from '../components/SafeImg';
 
 const STATUS_TABS: { label: string; value: 'all' | BorrowRequestStatus }[] = [
   { label: 'All Requests', value: 'all' },
@@ -167,8 +168,8 @@ export const BorrowingRequestsPage: React.FC = () => {
               className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 shadow-xs hover:border-stone-300 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
               <div className="flex items-start gap-4">
-                <img
-                  src={req.item.images[0]}
+                <SafeImg
+                  src={req.item.images?.[0]}
                   alt={req.item.title}
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-stone-100"
                 />
