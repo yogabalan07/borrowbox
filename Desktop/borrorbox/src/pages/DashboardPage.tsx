@@ -17,6 +17,7 @@ import { requestsService, itemsService, notificationsService } from '../services
 import { BorrowRequest, Item, NotificationItem } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { EmptyState } from '../components/EmptyState';
+import { SafeImg } from '../components/SafeImg';
 
 export const DashboardPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -200,8 +201,8 @@ export const DashboardPage: React.FC = () => {
                     className="p-4 rounded-xl border border-stone-200 hover:border-stone-300 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-3">
-                      <img
-                        src={req.item.images[0]}
+                      <SafeImg
+                        src={req.item.images?.[0]}
                         alt={req.item.title}
                         className="w-12 h-12 rounded-lg object-cover shrink-0 border border-stone-100"
                       />
@@ -301,8 +302,8 @@ export const DashboardPage: React.FC = () => {
                     className="p-3.5 rounded-xl border border-stone-200 flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={item.images[0]}
+                      <SafeImg
+                        src={item.images?.[0]}
                         alt=""
                         className="w-12 h-12 rounded-lg object-cover shrink-0 border border-stone-100"
                       />

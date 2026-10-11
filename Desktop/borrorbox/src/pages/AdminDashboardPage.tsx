@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { adminService, itemsService } from '../services/api';
 import { AdminStats, User, ReportedItem, BorrowRequest, Item } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
+import { SafeImg } from '../components/SafeImg';
 
 export const AdminDashboardPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -162,7 +163,9 @@ export const AdminDashboardPage: React.FC = () => {
               <span className="text-3xl font-bold text-stone-900 tabular-nums">
                 {stats.totalUsers.toLocaleString()}
               </span>
-              <span className="text-xs text-emerald-700 font-medium">99.4% active</span>
+              <span className="text-xs text-emerald-700 font-medium">
+                {stats.completedLoans.toLocaleString()} completed loans
+              </span>
             </div>
           </div>
 
@@ -172,7 +175,9 @@ export const AdminDashboardPage: React.FC = () => {
               <span className="text-3xl font-bold text-stone-900 tabular-nums">
                 {stats.totalListings.toLocaleString()}
               </span>
-              <span className="text-xs text-stone-500">Across 7 categories</span>
+              <span className="text-xs text-stone-500">
+                {stats.pendingModerations.toLocaleString()} pending moderation
+              </span>
             </div>
           </div>
 
@@ -325,7 +330,7 @@ export const AdminDashboardPage: React.FC = () => {
                       <tr key={u.id} className="hover:bg-stone-50/50">
                         <td className="p-4">
                           <div className="flex items-center gap-2.5">
-                            <img src={u.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover border" />
+                            <SafeImg src={u.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover border" />
                             <div>
                               <p className="font-semibold text-stone-900">{u.name}</p>
                               <p className="text-[11px] text-stone-400">{u.email}</p>

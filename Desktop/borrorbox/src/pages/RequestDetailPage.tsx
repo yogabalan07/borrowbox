@@ -18,6 +18,7 @@ import { requestsService, chatService } from '../services/api';
 import { BorrowRequest } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from '../components/StatusBadge';
+import { SafeImg } from '../components/SafeImg';
 
 export const RequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -260,7 +261,7 @@ export const RequestDetailPage: React.FC = () => {
               const peer = isOwner ? request.borrower : request.owner;
               return (
                 <div className="flex items-start gap-4">
-                  <img
+                  <SafeImg
                     src={peer.avatarUrl}
                     alt=""
                     className="w-14 h-14 rounded-full object-cover border border-stone-200 shrink-0"
@@ -324,7 +325,7 @@ export const RequestDetailPage: React.FC = () => {
               </button>
             )}
 
-            {isOwner && request.status === 'active' && (
+            {isOwner && (request.status === 'active' || request.status === 'overdue') && (
               <button
                 onClick={() => handleUpdateStatus('returned')}
                 disabled={actionLoading}
