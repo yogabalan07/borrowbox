@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { authService, clearAuthToken, getAuthToken } from '../services/api';
+import { authService, clearAuthToken, getAuthToken, googleAuthService } from '../services/api';
 
 interface AuthContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password?: string) => Promise<void>;
+  loginWithGoogle: (handoffToken: string) => Promise<void>;
   register: (data: {
     name: string;
     email: string;
@@ -57,6 +58,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async (handoffToken: string) => {
+    setIsLoading(true);
+    try {
+      const user = await googleAuthService.exchangeHandoff(handoffToken);
+      setCurrentUser(user);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const register = async (data: {
     name: string;
     email: string;
@@ -98,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!currentUser,
         isLoading,
         login,
+        loginWithGoogle,
         register,
         logout,
         updateProfile,

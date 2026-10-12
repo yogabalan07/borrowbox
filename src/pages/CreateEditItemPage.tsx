@@ -102,7 +102,6 @@ export const CreateEditItemPage: React.FC = () => {
         deposit: Number(deposit),
         pickupLocation,
         images,
-        ownerId: currentUser.id,
         isAvailable,
         minBorrowDays: Number(minBorrowDays),
         maxBorrowDays: Number(maxBorrowDays),

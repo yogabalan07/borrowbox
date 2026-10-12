@@ -6,7 +6,8 @@ import {
   AlertTriangle, 
   Check, 
   Ban,
-  PackageCheck
+  PackageCheck,
+  RotateCcw
 } from 'lucide-react';
 import { BorrowRequestStatus } from '../types';
 
@@ -42,6 +43,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
           <Check className="w-3.5 h-3.5 text-stone-600" />
           <span>Returned & Closed</span>
+        </span>
+      );
+    case 'return_pending':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-violet-50 text-violet-800 border border-violet-200">
+          <RotateCcw className="w-3.5 h-3.5 text-violet-600" />
+          <span>Awaiting Return Confirmation</span>
         </span>
       );
     case 'overdue':

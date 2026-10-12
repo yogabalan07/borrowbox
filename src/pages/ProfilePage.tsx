@@ -46,7 +46,7 @@ export const ProfilePage: React.FC = () => {
     setEditDept(currentUser.department || '');
 
     Promise.all([
-      itemsService.getMyItems(currentUser.id),
+      itemsService.getMyListings(),
       requestsService.getMyBorrowingRequests(currentUser.id),
     ])
       .then(([items, history]) => {

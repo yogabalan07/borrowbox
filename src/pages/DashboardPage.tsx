@@ -37,7 +37,7 @@ export const DashboardPage: React.FC = () => {
     Promise.all([
       requestsService.getMyBorrowingRequests(currentUser.id),
       requestsService.getMyLendingRequests(currentUser.id),
-      itemsService.getMyItems(currentUser.id),
+      itemsService.getMyListings(),
       notificationsService.getNotifications(currentUser.id),
     ])
       .then(([borrowing, lending, items, notifs]) => {
@@ -82,7 +82,9 @@ export const DashboardPage: React.FC = () => {
     );
   }
 
-  const activeLoans = borrowRequests.filter((r) => r.status === 'active');
+  const activeLoans = borrowRequests.filter(
+    (r) => r.status === 'active' || r.status === 'overdue' || r.status === 'return_pending'
+  );
   const pendingBorrowRequests = borrowRequests.filter((r) => r.status === 'pending');
   const pendingLendingRequests = lendingRequests.filter((r) => r.status === 'pending');
   const upcomingReturns = activeLoans.filter((r) => {

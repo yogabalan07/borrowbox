@@ -56,6 +56,7 @@ export type BorrowRequestStatus =
   | 'approved'
   | 'rejected'
   | 'active'
+  | 'return_pending'
   | 'overdue'
   | 'returned'
   | 'cancelled';

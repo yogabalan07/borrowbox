@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   ShieldCheck, 
   Users, 
@@ -73,19 +74,19 @@ export const AdminDashboardPage: React.FC = () => {
         </p>
 
         <div className="pt-2 flex justify-center gap-3">
-          <a
-            href="/"
+          <Link
+            to="/"
             className="px-4 py-2 border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-lg text-xs font-semibold"
           >
             Return to Campus Home
-          </a>
+          </Link>
           {!currentUser && (
-            <a
-              href="/login"
+            <Link
+              to="/login"
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold"
             >
               Sign In with Admin Account
-            </a>
+            </Link>
           )}
         </div>
       </div>

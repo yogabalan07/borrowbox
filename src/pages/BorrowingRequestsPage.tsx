@@ -22,6 +22,7 @@ const STATUS_TABS: { label: string; value: 'all' | BorrowRequestStatus }[] = [
   { label: 'Pending', value: 'pending' },
   { label: 'Approved', value: 'approved' },
   { label: 'Active Loans', value: 'active' },
+  { label: 'Awaiting Return', value: 'return_pending' },
   { label: 'Returned', value: 'returned' },
   { label: 'Overdue', value: 'overdue' },
   { label: 'Rejected / Cancelled', value: 'rejected' },
@@ -77,6 +78,17 @@ export const BorrowingRequestsPage: React.FC = () => {
     setActionLoadingId(requestId);
     try {
       await requestsService.updateRequestStatus(requestId, 'cancelled');
+      await fetchRequests();
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleReportReturn = async (requestId: string) => {
+    if (!confirm('Report this item as returned to its owner for confirmation?')) return;
+    setActionLoadingId(requestId);
+    try {
+      await requestsService.updateRequestStatus(requestId, 'return_pending');
       await fetchRequests();
     } finally {
       setActionLoadingId(null);
@@ -229,6 +241,22 @@ export const BorrowingRequestsPage: React.FC = () => {
                   >
                     {actionLoadingId === req.id ? 'Cancelling...' : 'Cancel'}
                   </button>
+                )}
+
+                {(req.status === 'active' || req.status === 'overdue') && (
+                  <button
+                    onClick={() => handleReportReturn(req.id)}
+                    disabled={actionLoadingId === req.id}
+                    className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                  >
+                    {actionLoadingId === req.id ? 'Reporting...' : 'Report Returned'}
+                  </button>
+                )}
+
+                {req.status === 'return_pending' && (
+                  <span className="px-3 py-2 bg-violet-50 border border-violet-200 text-violet-700 rounded-lg text-xs font-medium">
+                    Awaiting owner confirmation
+                  </span>
                 )}
               </div>
             </div>

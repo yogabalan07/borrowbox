@@ -21,9 +21,13 @@ BorrowBox is configured to connect to your FastAPI backend via `VITE_API_BASE_UR
 Create or edit your `.env` file based on `.env.example`:
 
 ```bash
-# URL of your Python FastAPI backend (e.g., http://localhost:8000/api/v1)
-VITE_API_BASE_URL=""
+# URL of your Python FastAPI backend (dev default: http://127.0.0.1:8000/api/v1)
+VITE_API_BASE_URL="http://127.0.0.1:8000/api/v1"
 ```
+
+Local development standardizes on the backend at `http://127.0.0.1:8000` and the
+frontend at `http://localhost:3000`. These are different origins, so both must
+be allowed by the backend CORS allowlist when needed.
 
 - **Backend Connection**: BorrowBox routes all requests directly to your FastAPI backend using standard HTTP headers (`Authorization: Bearer <token>`, JSON payloads). Real error responses from FastAPI (such as 400 Bad Request, 401 Unauthorized, 404 Not Found, 500 Internal Server Error) are surfaced directly in the UI.
 - **Strict Real Data**: All mock datasets, placeholder fallbacks, and dummy records have been removed. If the backend is unreachable or not configured, clear error indicators and retry triggers are presented.
@@ -43,7 +47,16 @@ npm run dev
 ```
 The app will run at `http://localhost:3000`.
 
-### 3. Build for Production
+### 3. Run the FastAPI Backend
+From the `backend` directory, with the project's virtual environment activated:
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+The API will be available at `http://127.0.0.1:8000/api/v1` (health check:
+`http://127.0.0.1:8000/api/v1/health`). Backend configuration is read from
+`backend/.env` (see `backend/.env.example`).
+
+### 4. Build for Production
 ```bash
 npm run build
 ```
@@ -59,6 +72,9 @@ To connect your own Python FastAPI backend, implement the following endpoints co
 - `POST /auth/login` — Accepts `{ "email": "...", "password": "..." }`. Returns `{ "user": User, "access_token": "..." }`.
 - `GET /auth/me` — Returns the authenticated `User` object.
 - `PATCH /auth/me` — Updates student profile bio, phone, or department.
+- `GET /auth/google/start` — Begins the Google OAuth 2.0 flow (full-page browser navigation).
+- `GET /auth/google/callback` — Google redirect target; issues a short-lived handoff token.
+- `POST /auth/google/exchange` — Exchanges `{ "handoff_token": "..." }` for `{ "user": User, "access_token": "..." }`.
 
 ### 2. Marketplace & Listings (`/items`)
 - `GET /items?category={}&lending_mode={}&search={}&sort_by={}` — Returns `Item[]`.

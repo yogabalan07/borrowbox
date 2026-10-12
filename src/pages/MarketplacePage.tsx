@@ -43,7 +43,14 @@ export const MarketplacePage: React.FC = () => {
   // Items & loading/error states
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination + price range
+  const PAGE_SIZE = 24;
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
 
   // Sync state with URL params
   useEffect(() => {
@@ -53,34 +60,56 @@ export const MarketplacePage: React.FC = () => {
     if (urlMode) setLendingMode(urlMode as ItemLendingMode);
   }, [searchParams]);
 
-  const fetchFilteredItems = async () => {
-    setLoading(true);
+  const buildFilters = (offset: number): ItemFilters => {
+    const parsedMin = minPrice.trim() === '' ? undefined : Number(minPrice);
+    const parsedMax = maxPrice.trim() === '' ? undefined : Number(maxPrice);
+    return {
+      query: query.trim() || undefined,
+      category: selectedCategory,
+      lendingMode,
+      condition,
+      onlyAvailable: availableOnly,
+      sortBy,
+      minPrice:
+        parsedMin !== undefined && Number.isFinite(parsedMin) && parsedMin >= 0
+          ? parsedMin
+          : undefined,
+      maxPrice:
+        parsedMax !== undefined && Number.isFinite(parsedMax) && parsedMax >= 0
+          ? parsedMax
+          : undefined,
+      limit: PAGE_SIZE,
+      offset,
+    };
+  };
+
+  const fetchItems = async (reset: boolean) => {
+    if (reset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
     try {
-      const filters: ItemFilters = {
-        query: query.trim() || undefined,
-        category: selectedCategory,
-        lendingMode,
-        condition,
-        onlyAvailable: availableOnly,
-        sortBy,
-      };
-      const data = await itemsService.listItems(filters);
-      setItems(data);
+      const offset = reset ? 0 : items.length;
+      const data = await itemsService.listItems(buildFilters(offset));
+      setItems((prev) => (reset ? data : [...prev, ...data]));
+      setHasMore(data.length === PAGE_SIZE);
     } catch (err: any) {
       setError(err?.message || 'Failed to load items. Please verify your connection.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchFilteredItems();
-  }, [selectedCategory, lendingMode, condition, availableOnly, sortBy]);
+    fetchItems(true);
+  }, [selectedCategory, lendingMode, condition, availableOnly, sortBy, minPrice, maxPrice]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchFilteredItems();
+    fetchItems(true);
   };
 
   const handleResetFilters = () => {
@@ -90,6 +119,8 @@ export const MarketplacePage: React.FC = () => {
     setCondition('all');
     setAvailableOnly(false);
     setSortBy('newest');
+    setMinPrice('');
+    setMaxPrice('');
     setSearchParams({});
   };
 
@@ -98,7 +129,9 @@ export const MarketplacePage: React.FC = () => {
     selectedCategory !== 'all' ||
     lendingMode !== 'all' ||
     condition !== 'all' ||
-    availableOnly;
+    availableOnly ||
+    minPrice.trim() !== '' ||
+    maxPrice.trim() !== '';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -205,6 +238,32 @@ export const MarketplacePage: React.FC = () => {
             <option value="fair">Fair</option>
           </select>
 
+          {/* Price Range */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-stone-500 hidden sm:inline">Price $</span>
+            <input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              placeholder="Min"
+              aria-label="Minimum daily price"
+              className="w-16 bg-stone-50 border border-stone-200 text-stone-700 rounded-lg px-2 py-1 font-medium focus:ring-1 focus:ring-emerald-500"
+            />
+            <span className="text-stone-400">–</span>
+            <input
+              type="number"
+              min={0}
+              inputMode="numeric"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              placeholder="Max"
+              aria-label="Maximum daily price"
+              className="w-16 bg-stone-50 border border-stone-200 text-stone-700 rounded-lg px-2 py-1 font-medium focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
+
           {/* Availability toggle */}
           <label className="flex items-center gap-1.5 cursor-pointer text-stone-700 select-none">
             <input
@@ -230,11 +289,13 @@ export const MarketplacePage: React.FC = () => {
         {/* Sorting Dropdown & Results Counter */}
         <div className="flex items-center gap-3">
           <span className="text-stone-500 tabular-nums">
-            {loading ? 'Searching...' : `${items.length} ${items.length === 1 ? 'item' : 'items'}`}
+            {loading
+              ? 'Searching...'
+              : `${items.length}${hasMore ? '+' : ''} ${items.length === 1 ? 'item' : 'items'}`}
           </span>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as NonNullable<ItemFilters['sortBy']>)}
             className="bg-stone-50 border border-stone-200 text-stone-700 rounded-lg px-2.5 py-1 font-medium focus:ring-1 focus:ring-emerald-500"
           >
             <option value="newest">Sort: Recently Listed</option>
@@ -250,7 +311,7 @@ export const MarketplacePage: React.FC = () => {
         <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-center justify-between">
           <span>{error}</span>
           <button
-            onClick={fetchFilteredItems}
+            onClick={() => fetchItems(true)}
             className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-900 rounded-md font-medium text-xs"
           >
             Retry
@@ -269,11 +330,25 @@ export const MarketplacePage: React.FC = () => {
           onAction={handleResetFilters}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {items.map((item) => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {items.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => fetchItems(false)}
+                disabled={loadingMore}
+                className="px-5 py-2.5 bg-white border border-stone-300 hover:bg-stone-50 disabled:opacity-60 text-stone-700 rounded-lg text-sm font-semibold shadow-xs transition-colors"
+              >
+                {loadingMore ? 'Loading more...' : 'Load more listings'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

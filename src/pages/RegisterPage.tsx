@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Package, GraduationCap, Building2, User, Mail, Lock, Phone, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { googleAuthService } from '../services/api';
+import { GoogleIcon } from '../components/GoogleIcon';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -15,6 +17,7 @@ export const RegisterPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,6 +42,18 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
+  const handleGoogle = () => {
+    setError(null);
+    try {
+      setGoogleLoading(true);
+      // Full-page navigation to begin the OAuth flow (sets the CSRF cookie).
+      window.location.assign(googleAuthService.getStartUrl());
+    } catch (err: any) {
+      setGoogleLoading(false);
+      setError(err?.message || 'Google sign-in is unavailable right now.');
+    }
+  };
+
   return (
     <div className="max-w-xl mx-auto px-4 py-12 space-y-6">
       <div className="text-center space-y-2">
@@ -57,6 +72,30 @@ export const RegisterPage: React.FC = () => {
             {error}
           </div>
         )}
+
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={googleLoading || loading}
+            aria-label="Continue with Google"
+            className="w-full py-2.5 px-4 bg-white border border-stone-300 hover:bg-stone-50 disabled:opacity-50 text-stone-800 rounded-lg text-sm font-semibold shadow-xs transition-colors flex items-center justify-center gap-2"
+          >
+            <GoogleIcon className="w-4 h-4" />
+            <span>{googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}</span>
+          </button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-stone-200" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-2 text-[11px] uppercase tracking-wide text-stone-400">
+                or
+              </span>
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

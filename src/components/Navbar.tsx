@@ -136,6 +136,15 @@ export const Navbar: React.FC = () => {
                   </Link>
 
                   <Link
+                    to="/my-listings"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <Package className="w-4 h-4 text-stone-400" />
+                    <span>My Listings</span>
+                  </Link>
+
+                  <Link
                     to="/notifications"
                     onClick={() => setUserDropdownOpen(false)}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
@@ -230,6 +239,19 @@ export const Navbar: React.FC = () => {
               className="block px-3 py-2 rounded-lg text-base font-medium text-stone-700 hover:bg-stone-50"
             >
               Admin Moderation
+            </Link>
+          )}
+          {isAuthenticated && (
+            <Link
+              to="/my-listings"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                location.pathname === '/my-listings'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              My Listings
             </Link>
           )}
           <Link

@@ -8,13 +8,16 @@ from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
 from ..deps import get_current_user
 from ..models import BorrowRequest, Item, User
-from ..schemas import ItemCreateIn, ItemUpdateIn
+from ..schemas import ItemCreateIn, ItemOut, ItemUpdateIn
 from ..serializers import item_out
 
 router = APIRouter(tags=["items"])
 
 MAX_IMAGES = 6
-MAX_IMAGE_CHARS = 2_000_000  # ~2MB per data-URL / URL string
+MAX_IMAGE_CHARS = 7_000_000  # A 5MB image becomes ~6.7MB as a base64 data-URL string.
+DEFAULT_PAGE_SIZE = 24
+MAX_PAGE_SIZE = 100
+SORT_OPTIONS = ("newest", "price_asc", "price_desc", "rating")
 
 
 def _validate_images(images: list[str]) -> list[str]:
@@ -28,7 +31,7 @@ def _validate_images(images: list[str]) -> list[str]:
         if len(image) > MAX_IMAGE_CHARS:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="One of the images is too large. Please use images under 2MB.",
+                detail="One of the images is too large. Please use images under 5MB.",
             )
     return cleaned
 
@@ -66,14 +69,18 @@ def _get_owned_item(item_id: str, user: User, db: Session) -> Item:
     return item
 
 
-@router.get("/items")
+@router.get("/items", response_model=list[ItemOut])
 def list_items(
     search: str | None = None,
     category: str | None = None,
     lending_mode: str | None = None,
     condition: str | None = None,
     available_only: bool = False,
+    min_price: float | None = Query(default=None, ge=0),
+    max_price: float | None = Query(default=None, ge=0),
     sort_by: str = "newest",
+    limit: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
     query = select(Item).options(joinedload(Item.owner))
@@ -94,6 +101,10 @@ def list_items(
         query = query.where(Item.condition == condition)
     if available_only:
         query = query.where(Item.is_available.is_(True))
+    if min_price is not None:
+        query = query.where(Item.daily_price >= min_price)
+    if max_price is not None:
+        query = query.where(Item.daily_price <= max_price)
 
     if sort_by == "price_asc":
         query = query.order_by(Item.daily_price.asc(), Item.created_at.desc())
@@ -106,11 +117,26 @@ def list_items(
     else:
         query = query.order_by(Item.created_at.desc())
 
+    query = query.limit(limit).offset(offset)
     items = db.scalars(query).unique().all()
     return [item_out(item) for item in items]
 
 
-@router.get("/users/{user_id}/items")
+@router.get("/items/mine", response_model=list[ItemOut])
+def list_my_items(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    items = db.scalars(
+        select(Item)
+        .where(Item.owner_id == current_user.id)
+        .options(joinedload(Item.owner))
+        .order_by(Item.created_at.desc())
+    ).unique().all()
+    return [item_out(item) for item in items]
+
+
+@router.get("/users/{user_id}/items", response_model=list[ItemOut])
 def list_user_items(user_id: str, db: Session = Depends(get_db)):
     owner = db.get(User, user_id)
     if owner is None:
@@ -126,7 +152,7 @@ def list_user_items(user_id: str, db: Session = Depends(get_db)):
     return [item_out(item) for item in items]
 
 
-@router.get("/items/{item_id}")
+@router.get("/items/{item_id}", response_model=ItemOut)
 def get_item(item_id: str, db: Session = Depends(get_db)):
     item = db.scalar(
         select(Item).where(Item.id == item_id).options(joinedload(Item.owner))
@@ -138,7 +164,7 @@ def get_item(item_id: str, db: Session = Depends(get_db)):
     return item_out(item)
 
 
-@router.post("/items", status_code=status.HTTP_201_CREATED)
+@router.post("/items", status_code=status.HTTP_201_CREATED, response_model=ItemOut)
 def create_item(
     payload: ItemCreateIn,
     db: Session = Depends(get_db),
@@ -170,7 +196,7 @@ def create_item(
     return item_out(item)
 
 
-@router.patch("/items/{item_id}")
+@router.patch("/items/{item_id}", response_model=ItemOut)
 def update_item(
     item_id: str,
     payload: ItemUpdateIn,

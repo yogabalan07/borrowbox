@@ -47,7 +47,7 @@ export const clearAuthToken = () => {
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   if (!API_BASE_URL) {
     throw new ApiError(
-      'FastAPI backend URL is not configured. Please define VITE_API_BASE_URL in your environment or .env file (e.g. VITE_API_BASE_URL="http://localhost:8000/api/v1").',
+      'FastAPI backend URL is not configured. Please define VITE_API_BASE_URL in your environment or .env file (e.g. VITE_API_BASE_URL="http://127.0.0.1:8000/api/v1").',
       0
     );
   }
@@ -144,6 +144,60 @@ export const authService = {
 };
 
 // =========================================================
+// GOOGLE OAUTH SERVICE (FastAPI /auth/google endpoints)
+// =========================================================
+/**
+ * Maps a backend OAuth error code (from the /login?error= query string) to a
+ * safe, user-friendly message. Never surfaces tokens or internal details.
+ */
+export const describeGoogleAuthError = (code: string | null | undefined): string | null => {
+  switch (code) {
+    case 'google_unavailable':
+      return 'Google sign-in is not configured on the server yet. Please use your email and password.';
+    case 'google_state':
+      return 'Your Google sign-in session could not be verified. Please try again.';
+    case 'google_account_exists':
+      return 'An account already exists for this email. Sign in with your email and password, or ask an administrator to verify your student account before using Google sign-in.';
+    case 'google':
+      return 'Google sign-in could not be completed. Please try again or use your email and password.';
+    default:
+      return code ? 'Sign-in could not be completed. Please try again.' : null;
+  }
+};
+
+export const googleAuthService = {
+  /**
+   * Absolute URL that begins the OAuth flow. The caller must navigate the whole
+   * browser to this URL (window.location.assign) — it must not be fetched,
+   * because the backend responds with a redirect to Google and a CSRF cookie.
+   */
+  getStartUrl(): string {
+    if (!API_BASE_URL) {
+      throw new ApiError(
+        'FastAPI backend URL is not configured. Please define VITE_API_BASE_URL in your environment or .env file (e.g. VITE_API_BASE_URL="http://127.0.0.1:8000/api/v1").',
+        0
+      );
+    }
+    return `${API_BASE_URL.replace(/\/+$/, '')}/auth/google/start`;
+  },
+
+  /**
+   * Exchanges the short-lived handoff token (read from the URL fragment) for a
+   * normal session token, persisting it via the shared token helper.
+   */
+  async exchangeHandoff(handoffToken: string): Promise<User> {
+    const res = await apiFetch<{ user: User; access_token: string }>('auth/google/exchange', {
+      method: 'POST',
+      body: JSON.stringify({ handoff_token: handoffToken }),
+    });
+    if (res.access_token) {
+      setAuthToken(res.access_token);
+    }
+    return res.user;
+  },
+};
+
+// =========================================================
 // ITEMS SERVICE (FastAPI /items endpoints)
 // =========================================================
 export interface ItemFilters {
@@ -153,6 +207,10 @@ export interface ItemFilters {
   condition?: ItemCondition | 'all';
   onlyAvailable?: boolean;
   sortBy?: 'newest' | 'price_asc' | 'price_desc' | 'rating';
+  minPrice?: number;
+  maxPrice?: number;
+  limit?: number;
+  offset?: number;
 }
 
 export const itemsService = {
@@ -164,6 +222,10 @@ export const itemsService = {
     if (filters.condition && filters.condition !== 'all') params.set('condition', filters.condition);
     if (filters.onlyAvailable) params.set('available_only', 'true');
     if (filters.sortBy) params.set('sort_by', filters.sortBy);
+    if (typeof filters.minPrice === 'number') params.set('min_price', String(filters.minPrice));
+    if (typeof filters.maxPrice === 'number') params.set('max_price', String(filters.maxPrice));
+    if (typeof filters.limit === 'number') params.set('limit', String(filters.limit));
+    if (typeof filters.offset === 'number') params.set('offset', String(filters.offset));
 
     const qs = params.toString() ? `?${params.toString()}` : '';
     return apiFetch<Item[]>(`items${qs}`);
@@ -173,7 +235,7 @@ export const itemsService = {
     return apiFetch<Item>(`items/${id}`);
   },
 
-  async createItem(itemData: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'owner'>): Promise<Item> {
+  async createItem(itemData: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'owner' | 'ownerId'>): Promise<Item> {
     return apiFetch<Item>('items', {
       method: 'POST',
       body: JSON.stringify(itemData),
@@ -195,6 +257,10 @@ export const itemsService = {
 
   async getMyItems(userId: string): Promise<Item[]> {
     return apiFetch<Item[]>(`users/${userId}/items`);
+  },
+
+  async getMyListings(): Promise<Item[]> {
+    return apiFetch<Item[]>('items/mine');
   },
 };
 

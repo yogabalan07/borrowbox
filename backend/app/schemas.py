@@ -9,7 +9,14 @@ Category = Literal[
 Condition = Literal["like_new", "good", "fair"]
 LendingMode = Literal["free", "rent"]
 RequestStatus = Literal[
-    "pending", "approved", "rejected", "active", "overdue", "returned", "cancelled"
+    "pending",
+    "approved",
+    "rejected",
+    "active",
+    "return_pending",
+    "overdue",
+    "returned",
+    "cancelled",
 ]
 
 
@@ -28,6 +35,10 @@ class RegisterIn(BaseModel):
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
+
+
+class GoogleExchangeIn(BaseModel):
+    handoff_token: str = Field(min_length=1, max_length=4096)
 
 
 class ProfileUpdateIn(BaseModel):
@@ -75,6 +86,39 @@ class ItemUpdateIn(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class UserPreviewOut(BaseModel):
+    id: str
+    name: str
+    college: str
+    department: str
+    yearOfStudy: str
+    avatarUrl: str
+    rating: float
+    reviewCount: int
+    isVerified: bool
+
+
+class ItemOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    category: Category
+    condition: Condition
+    lendingMode: LendingMode
+    dailyPrice: float
+    deposit: float
+    pickupLocation: str
+    images: list[str]
+    ownerId: str
+    owner: UserPreviewOut | None = None
+    isAvailable: bool
+    minBorrowDays: int
+    maxBorrowDays: int
+    guidelines: str
+    createdAt: str | None = None
+    updatedAt: str | None = None
+
+
 class RequestCreateIn(BaseModel):
     item_id: str
     start_date: date
@@ -84,6 +128,29 @@ class RequestCreateIn(BaseModel):
 
 class RequestStatusIn(BaseModel):
     status: RequestStatus
+
+
+class RequestOut(BaseModel):
+    id: str
+    itemId: str
+    item: ItemOut | None = None
+    borrowerId: str
+    borrower: UserPreviewOut | None = None
+    ownerId: str
+    owner: UserPreviewOut | None = None
+    startDate: str
+    endDate: str
+    totalDays: int
+    dailyPrice: float
+    deposit: float
+    estimatedTotal: float
+    message: str
+    status: RequestStatus
+    pickupLocation: str
+    handoverConfirmedAt: str | None = None
+    returnedConfirmedAt: str | None = None
+    createdAt: str | None = None
+    updatedAt: str | None = None
 
 
 class MessageCreateIn(BaseModel):

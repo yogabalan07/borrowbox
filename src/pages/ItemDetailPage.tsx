@@ -12,7 +12,10 @@ import {
   Clock, 
   Info,
   Shield,
-  FileCheck
+  FileCheck,
+  Edit3,
+  Trash2,
+  Power
 } from 'lucide-react';
 import { itemsService, requestsService, chatService } from '../services/api';
 import { Item } from '../types';
@@ -35,6 +38,12 @@ export const ItemDetailPage: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [requestSuccessId, setRequestSuccessId] = useState<string | null>(null);
 
+  // Owner/admin management state
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+  const [togglingAvailability, setTogglingAvailability] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
   // Default dates: tomorrow to +3 days
   useEffect(() => {
     const today = new Date();
@@ -53,6 +62,7 @@ export const ItemDetailPage: React.FC = () => {
     itemsService.getItem(id)
       .then((data) => {
         setItem(data);
+        setActiveImageIndex(0);
         setError(null);
       })
       .catch((err) => {
@@ -73,6 +83,37 @@ export const ItemDetailPage: React.FC = () => {
   const daysCount = calculateDays();
   const estimatedCost = item ? (item.lendingMode === 'free' ? 0 : item.dailyPrice * daysCount) : 0;
   const isOwner = currentUser?.id === item?.ownerId;
+  const canManage = isOwner || Boolean(currentUser?.isAdmin);
+
+  const handleToggleAvailability = async () => {
+    if (!item) return;
+    setActionError(null);
+    setTogglingAvailability(true);
+    try {
+      const updated = await itemsService.updateItem(item.id, { isAvailable: !item.isAvailable });
+      setItem(updated);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to update availability.');
+    } finally {
+      setTogglingAvailability(false);
+    }
+  };
+
+  const handleDeleteListing = async () => {
+    if (!item) return;
+    if (!window.confirm('Delete this listing permanently? This action cannot be undone.')) {
+      return;
+    }
+    setActionError(null);
+    setDeleting(true);
+    try {
+      await itemsService.deleteItem(item.id);
+      navigate(isOwner ? '/my-listings' : '/marketplace', { replace: true });
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to delete this listing.');
+      setDeleting(false);
+    }
+  };
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,18 +222,45 @@ export const ItemDetailPage: React.FC = () => {
         {/* Left Column: Media & Full Item Description */}
         <div className="lg:col-span-7 space-y-8">
           {/* Main Photo Showcase */}
-          <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 aspect-4/3 shadow-xs flex items-center justify-center">
-            {item.images && item.images.length > 0 ? (
-              <img
-                src={item.images[0]}
-                alt={item.title}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="text-center p-6 text-stone-400">
-                <FileCheck className="w-12 h-12 stroke-1 mb-2 mx-auto" />
-                <span className="text-xs font-medium">No photo uploaded</span>
+          <div className="space-y-3">
+            <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 aspect-4/3 shadow-xs flex items-center justify-center">
+              {item.images && item.images.length > 0 ? (
+                <img
+                  src={item.images[activeImageIndex] || item.images[0]}
+                  alt={item.title}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="text-center p-6 text-stone-400">
+                  <FileCheck className="w-12 h-12 stroke-1 mb-2 mx-auto" />
+                  <span className="text-xs font-medium">No photo uploaded</span>
+                </div>
+              )}
+            </div>
+
+            {item.images && item.images.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                {item.images.map((image, index) => (
+                  <button
+                    key={`${item.id}-image-${index}`}
+                    type="button"
+                    onClick={() => setActiveImageIndex(index)}
+                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                      activeImageIndex === index
+                        ? 'border-emerald-600'
+                        : 'border-stone-200 hover:border-stone-300'
+                    }`}
+                    aria-label={`View photo ${index + 1}`}
+                  >
+                    <img
+                      src={image}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -344,18 +412,69 @@ export const ItemDetailPage: React.FC = () => {
                   </Link>
                 </div>
               </div>
-            ) : isOwner ? (
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
-                <p className="font-semibold">This is your listing.</p>
-                <p className="text-amber-800 leading-relaxed">
-                  You cannot borrow an item you own. You can manage incoming requests for this item in your Lending Center.
-                </p>
-                <Link
-                  to="/requests/lending"
-                  className="inline-block font-semibold text-amber-900 underline mt-1"
-                >
-                  Go to Lending Center →
-                </Link>
+            ) : canManage ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
+                  <p className="font-semibold">
+                    {isOwner ? 'This is your listing.' : 'Administrator moderation view.'}
+                  </p>
+                  <p className="text-amber-800 leading-relaxed">
+                    {isOwner
+                      ? 'You cannot borrow an item you own. Manage availability, details, or incoming requests from here.'
+                      : 'You can review, edit, or remove this listing on behalf of the platform.'}
+                  </p>
+                  {isOwner && (
+                    <Link
+                      to="/requests/lending"
+                      className="inline-block font-semibold text-amber-900 underline mt-1"
+                    >
+                      Go to Lending Center →
+                    </Link>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl border border-stone-200 text-xs">
+                  <div>
+                    <span className="font-semibold text-stone-800 block">Listing status</span>
+                    <span className={item.isAvailable ? 'text-emerald-700' : 'text-amber-700'}>
+                      {item.isAvailable ? 'Available for borrowing' : 'Paused / on loan'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleAvailability}
+                    disabled={togglingAvailability}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-stone-300 hover:bg-stone-50 disabled:opacity-60 text-stone-700 rounded-lg font-semibold"
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                    <span>{item.isAvailable ? 'Mark unavailable' : 'Mark available'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Link
+                    to={`/items/${item.id}/edit`}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit Listing</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleDeleteListing}
+                    disabled={deleting}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60 rounded-lg text-xs font-semibold transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{deleting ? 'Deleting...' : 'Delete'}</span>
+                  </button>
+                </div>
+
+                {actionError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
+                    {actionError}
+                  </div>
+                )}
               </div>
             ) : (
               <form onSubmit={handleRequestSubmit} className="space-y-4">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Send, 
   MessageSquare, 
@@ -73,12 +73,12 @@ export const ChatPage: React.FC = () => {
         <p className="text-xs text-stone-500">
           Campus direct messaging requires an authenticated student session.
         </p>
-        <a
-          href="/login"
+        <Link
+          to="/login"
           className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700"
         >
           Sign In
-        </a>
+        </Link>
       </div>
     );
   }

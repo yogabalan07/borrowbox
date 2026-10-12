@@ -73,7 +73,13 @@ export const LendingRequestsPage: React.FC = () => {
   };
 
   const pendingRequests = requests.filter((r) => r.status === 'pending');
-  const activeAndApproved = requests.filter((r) => r.status === 'approved' || r.status === 'active');
+  const activeAndApproved = requests.filter(
+    (r) =>
+      r.status === 'approved' ||
+      r.status === 'active' ||
+      r.status === 'overdue' ||
+      r.status === 'return_pending'
+  );
   const pastRequests = requests.filter((r) => r.status === 'returned' || r.status === 'rejected' || r.status === 'cancelled');
 
   return (
@@ -270,6 +276,27 @@ export const LendingRequestsPage: React.FC = () => {
                       <Check className="w-3.5 h-3.5" />
                       <span>Confirm Returned in Good Shape</span>
                     </button>
+                  )}
+
+                  {req.status === 'return_pending' && (
+                    <>
+                      <button
+                        onClick={() => handleStatusChange(req.id, 'active')}
+                        disabled={actionLoadingId === req.id}
+                        className="px-3 py-2 border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Not Received</span>
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(req.id, 'returned')}
+                        disabled={actionLoadingId === req.id}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Confirm Return Received</span>
+                      </button>
+                    </>
                   )}
 
                   <Link

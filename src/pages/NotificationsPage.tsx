@@ -58,16 +58,24 @@ export const NotificationsPage: React.FC = () => {
   }
 
   const handleMarkAsRead = async (id: string) => {
-    await notificationsService.markAsRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+    try {
+      await notificationsService.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (err: any) {
+      setError(err?.message || 'Failed to mark notification as read.');
+    }
   };
 
   const handleMarkAllRead = async () => {
     if (!currentUser) return;
-    await notificationsService.markAllAsRead(currentUser.id);
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await notificationsService.markAllAsRead(currentUser.id);
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err: any) {
+      setError(err?.message || 'Failed to mark notifications as read.');
+    }
   };
 
   const filtered = notifications.filter((n) => {

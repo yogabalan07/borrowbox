@@ -57,3 +57,35 @@ CORS_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
+# ---------------------------------------------------------------------------
+# Google OAuth 2.0 (authorization-code flow)
+# ---------------------------------------------------------------------------
+# The client secret must only ever live in backend environment configuration.
+# It is never exposed to the frontend, logged, or included in responses.
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+
+# Must exactly match an "Authorized redirect URI" registered on the Google
+# OAuth client. Defaults to the local development backend (127.0.0.1:8000).
+GOOGLE_REDIRECT_URI = os.environ.get(
+    "GOOGLE_REDIRECT_URI",
+    "http://127.0.0.1:8000/api/v1/auth/google/callback",
+).strip()
+
+# Where the backend sends the browser back after the callback. Only this
+# origin is ever used for redirects (prevents open-redirect abuse).
+FRONTEND_URL = os.environ.get("BORROWBOX_FRONTEND_URL", "http://localhost:3000").strip().rstrip("/")
+
+# Opaque state cookie used to mitigate CSRF during the OAuth handshake.
+GOOGLE_STATE_COOKIE = "borrowbox_google_state"
+GOOGLE_STATE_COOKIE_PATH = "/api/v1/auth/google"
+GOOGLE_OAUTH_STATE_TTL_SECONDS = 600
+
+# Mark the state cookie Secure whenever either side of the flow is HTTPS.
+COOKIE_SECURE = GOOGLE_REDIRECT_URI.startswith("https://") or FRONTEND_URL.startswith("https://")
+
+
+def google_oauth_configured() -> bool:
+    """True only when both Google credentials are present in the backend env."""
+    return bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)

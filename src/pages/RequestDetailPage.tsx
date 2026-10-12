@@ -120,7 +120,7 @@ export const RequestDetailPage: React.FC = () => {
     },
     { 
       title: 'Handed Over', 
-      done: request.status === 'active' || request.status === 'returned' || request.status === 'overdue',
+      done: request.status === 'active' || request.status === 'returned' || request.status === 'overdue' || request.status === 'return_pending',
       timestamp: request.handoverConfirmedAt 
     },
     { 
@@ -334,6 +334,46 @@ export const RequestDetailPage: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Confirm Item Returned in Good Condition</span>
               </button>
+            )}
+
+            {isOwner && request.status === 'return_pending' && (
+              <div className="space-y-2">
+                <div className="p-2.5 bg-violet-50 border border-violet-200 rounded-lg text-xs text-violet-800">
+                  The borrower reports this item has been returned. Confirm you received it.
+                </div>
+                <button
+                  onClick={() => handleUpdateStatus('returned')}
+                  disabled={actionLoading}
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Confirm Return Received</span>
+                </button>
+                <button
+                  onClick={() => handleUpdateStatus('active')}
+                  disabled={actionLoading}
+                  className="w-full py-2 px-3 border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-lg text-xs font-semibold"
+                >
+                  Not Received Yet
+                </button>
+              </div>
+            )}
+
+            {isBorrower && (request.status === 'active' || request.status === 'overdue') && (
+              <button
+                onClick={() => handleUpdateStatus('return_pending')}
+                disabled={actionLoading}
+                className="w-full py-2.5 px-4 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Report Item Returned</span>
+              </button>
+            )}
+
+            {isBorrower && request.status === 'return_pending' && (
+              <div className="p-3 bg-violet-50 rounded-lg text-center text-xs text-violet-700 font-medium">
+                Waiting for the owner to confirm they received the item.
+              </div>
             )}
 
             {isBorrower && request.status === 'pending' && (
